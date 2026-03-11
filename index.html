@@ -11,6 +11,7 @@
     OneSignalDeferred.push(async function(OneSignal) {
       await OneSignal.init({
         appId: "c3d82911-2678-4685-8e6e-671249fc01d8",
+        serviceWorkerPath: "/sw.js",
         promptOptions: {
           slidedown: {
             prompts: [{
@@ -27,30 +28,22 @@
         },
       });
 
-      // Registra o Service Worker manualmente
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/sw.js').then(reg => {
-          console.log("SW registrado:", reg.scope);
-
-          // Aguarda 30s e dispara via Service Worker
-          setTimeout(() => {
-            reg.showNotification("🔔 Lembrete!", {
-              body: "Já passaram 30 segundos desde que você entrou!",
-              icon: "https://onesignal.com/images/notification_logo.png",
-              badge: "https://onesignal.com/images/notification_logo.png",
-              vibrate: [200, 100, 200],
-            });
-
-            document.getElementById('status').textContent = "📨 Notificação disparada!";
-            document.getElementById('status').className = "status-ok";
-            document.getElementById('contador').textContent = "🔔";
-          }, 30000);
-
-        }).catch(err => {
-          document.getElementById('status').textContent = "❌ Erro no SW: " + err;
-          document.getElementById('status').className = "status-err";
-        });
+      // Verifica se o usuário já permitiu
+      const permission = await OneSignal.Notifications.permission;
+      if (permission) {
+        document.getElementById('status').textContent = "✅ Notificações ativadas! Envie um teste pelo painel do OneSignal.";
+        document.getElementById('status').className = "status-ok";
       }
+
+      OneSignal.Notifications.addEventListener('permissionChange', (granted) => {
+        if (granted) {
+          document.getElementById('status').textContent = "✅ Permissão concedida! Envie um teste pelo painel do OneSignal.";
+          document.getElementById('status').className = "status-ok";
+        } else {
+          document.getElementById('status').textContent = "❌ Permissão negada.";
+          document.getElementById('status').className = "status-err";
+        }
+      });
     });
   </script>
 
@@ -70,21 +63,7 @@
     }
     h1 { font-size: 1.8rem; color: #e879f9; }
     p  { color: #aaa; font-size: 0.95rem; text-align: center; max-width: 420px; }
-    #contador { font-size: 3.5rem; font-weight: bold; color: #e879f9; }
-    #barra-wrap {
-      width: 320px; height: 8px;
-      background: #2a2a2a; border-radius: 99px; overflow: hidden;
-    }
-    #barra {
-      height: 100%; width: 100%;
-      background: #e879f9; border-radius: 99px;
-      transform-origin: left;
-      animation: encolher 30s linear forwards;
-    }
-    @keyframes encolher {
-      from { transform: scaleX(1); }
-      to   { transform: scaleX(0); }
-    }
+    #icon { font-size: 3.5rem; }
     #status {
       padding: 12px 20px; border-radius: 8px;
       font-size: 0.9rem; min-width: 300px; text-align: center;
@@ -92,24 +71,32 @@
     .status-ok  { background: #14532d; color: #4ade80; }
     .status-err { background: #450a0a; color: #f87171; }
     .status-inf { background: #1e3a5f; color: #60a5fa; }
+    .tip {
+      background: #1a1a2e;
+      border: 1px solid #e879f933;
+      border-radius: 10px;
+      padding: 16px 20px;
+      max-width: 420px;
+      font-size: 0.85rem;
+      color: #ccc;
+      line-height: 1.6;
+    }
+    .tip strong { color: #e879f9; }
   </style>
 </head>
 <body>
-  <h1>🔔 Notificação em 30s</h1>
-  <p>Permita as notificações. Após 30 segundos você receberá uma notificação mesmo com a aba em segundo plano.</p>
+  <h1>🔔 Push Notifications</h1>
+  <p>Permita as notificações e envie um teste pelo painel do OneSignal.</p>
 
-  <div id="contador">30</div>
-  <div id="barra-wrap"><div id="barra"></div></div>
+  <div id="icon">🔔</div>
   <div id="status" class="status-inf">⏳ Aguardando permissão...</div>
 
-  <script>
-    let segundos = 30;
-    const contadorEl = document.getElementById('contador');
-    const intervalo = setInterval(() => {
-      segundos--;
-      contadorEl.textContent = segundos;
-      if (segundos <= 0) clearInterval(intervalo);
-    }, 1000);
-  </script>
+  <div class="tip">
+    <strong>Como testar:</strong><br>
+    1. Permita as notificações acima<br>
+    2. Acesse <strong>onesignal.com → New Push</strong><br>
+    3. Envie para "All Users"<br>
+    4. A notificação chegará no seu celular ✅
+  </div>
 </body>
 </html>
