@@ -1,5 +1,2 @@
-// Service Worker - necessário para notificações no Chrome
-self.addEventListener('notificationclick', function(event) {
-  event.notification.close();
-  event.waitUntil(clients.openWindow('/'));
-});
+// Service Worker - OneSignal compatible
+importScripts('https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js');
